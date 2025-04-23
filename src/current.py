@@ -7,9 +7,10 @@ class Current:
     '''
     Represents a 'fake vehicle' for quick Pure Pursuit testing
     '''  
-    def __init__(self, position=np.array([0.0, 0.0]), lookAheadDistance=2.0, velocity=1.0, heading=0.0, max_accel=1.0):
+    def __init__(self, position=np.array([0.0, 0.0]), lookAheadDistance=2.0, velocity=1.0, heading=45.0, max_accel=1.0):
         # Current position of vehicle
         self.position = position  # (x, y)
+        self.wheelbase = 2.5
 
         # Look Ahead Distance
         self.lookAheadDistance = lookAheadDistance
@@ -21,7 +22,7 @@ class Current:
         self.velocity = velocity
         
         # Orientation of vehicle
-        self.theta = 45
+        self.theta = heading
         self.delta_theta = 0
 
         # Acceleration of vehicle
@@ -36,6 +37,16 @@ class Current:
         # Speed limits
         self.max_speed = 10.0
         self.min_speed = 1.0
+
+        # Calculate rear
+        self.rear_pos = position
+        self.update_rear()
+
+    def update_rear(self):
+        # Calculate rear axle
+        rear_x = self.position[0] - self.wheelbase * np.cos(self.theta)
+        rear_y = self.position[0] - self.wheelbase * np.sin(self.theta)
+        self.rear_pos = np.array([rear_x, rear_y])
 
     def calc_velocity(self, turn_sensitivity=1.0):
         curvature_magnitude = abs(self.curvature)
@@ -61,6 +72,7 @@ class Current:
         
         # Update position
         self.position += np.array([dx, dy])
+        self.update_rear()
 
     def update(self, pure_pursuit, track):
         self.lookAheadPosition = pure_pursuit.calc_lookahead_pos(self, track)
