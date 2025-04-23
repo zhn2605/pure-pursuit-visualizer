@@ -67,6 +67,7 @@ class History:
     
         car_dot, = ax.plot([], [], 'bo', markersize=8, label="Car")
         lookAheadDot, = ax.plot([], [], 'kx', markersize=10, label="Lookahead Point")
+        lookahead_line, = ax.plot([], [], 'r-', linewidth=1.5, label="Lookahead")
         final_pos = np.array([self.track.xs[-1], self.track.ys[-1]])
 
         # Time limit
@@ -88,6 +89,8 @@ class History:
             # Update plot data
             car_dot.set_data([car.position[0]], [car.position[1]])
             lookAheadDot.set_data([car.lookAheadPosition[0]], [car.lookAheadPosition[1]])
+            lookahead_line.set_data([car.position[0], car.lookAheadPosition[0]], 
+                                [car.position[1], car.lookAheadPosition[1]])
             trajectory_line.set_data(trajectory_xs, trajectory_ys)  # Update trajectory line
             
             # Debug flag
@@ -104,7 +107,7 @@ class History:
             
             current_time += dt
 
-            return car_dot, lookAheadDot, trajectory_line
+            return car_dot, lookAheadDot, trajectory_line, lookahead_line
 
         ani = animation.FuncAnimation(fig, update, frames=100, interval=interval, blit=True)
 
