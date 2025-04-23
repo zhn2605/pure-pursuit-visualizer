@@ -1,0 +1,17 @@
+
+[project]
+name = "pure-pursuit-visualizer"
+dynamic = "version"
+dependencies = [
+    "numpy"
+    "math"
+    "matplotlib.pyplot"
+    "matplotlib.animation"
+]
+requires-python = ">=3.8"
+authors = [
+    {name = "Zihan Zhao"},
+    {name = "Brayan Ramos Vicente"},
+]
+description = "Pure Pursuit Visualizer"
+readme = "README.md"
