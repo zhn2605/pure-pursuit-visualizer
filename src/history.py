@@ -21,7 +21,7 @@ class Track:
         plt.show()
 
     # Will work on this later
- #def spline_track(self):
+# def spline_track(self):
 # if len(self.points) < 3
 # print("Not enough points for spline")
 # return
@@ -65,7 +65,8 @@ class History:
         trajectory_ys = []
         trajectory_line, = ax.plot([], [], '-b', label="Trajectory")  # Trajectory line
     
-        car_dot, = ax.plot([], [], 'bo', markersize=8, label="Car")
+        car_rear, = ax.plot([], [], 'bo', markersize=8, label="rear")
+        car_front, = ax.plot([], [], 'bo', markersize=8, label="Car")
         lookAheadDot, = ax.plot([], [], 'kx', markersize=10, label="Lookahead Point")
         lookahead_line, = ax.plot([], [], 'r-', linewidth=1.5, label="Lookahead")
         final_pos = np.array([self.track.xs[-1], self.track.ys[-1]])
@@ -87,7 +88,8 @@ class History:
             trajectory_ys.append(car.position[1])
 
             # Update plot data
-            car_dot.set_data([car.position[0]], [car.position[1]])
+            car_rear.set_data([car.position[0]], [car.position[1]])
+            car_front.set_data([car.front[0]], [car.front[1]])
             lookAheadDot.set_data([car.lookAheadPosition[0]], [car.lookAheadPosition[1]])
             lookahead_line.set_data([car.position[0], car.lookAheadPosition[0]], 
                                 [car.position[1], car.lookAheadPosition[1]])
@@ -107,7 +109,7 @@ class History:
             
             current_time += dt
 
-            return car_dot, lookAheadDot, trajectory_line, lookahead_line
+            return car_rear, car_front, lookAheadDot, trajectory_line, lookahead_line
 
         ani = animation.FuncAnimation(fig, update, frames=100, interval=interval, blit=True)
 

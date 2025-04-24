@@ -7,7 +7,7 @@ class Current:
     '''
     Represents a 'fake vehicle' for quick Pure Pursuit testing
     '''  
-    def __init__(self, position=np.array([0.0, 0.0]), lookAheadDistance=2.0, velocity=1.0, heading=45.0, max_accel=1.0):
+    def __init__(self, position=np.array([0.0, 0.0]), lookAheadDistance=2.0, velocity=1.0, heading=45.0, max_accel=1.0, turn_sensitivity=3.0):
         # Current position of vehicle
         self.position = position  # (x, y)
         self.front = position # temporary
@@ -24,7 +24,6 @@ class Current:
         
         # Orientation of vehicle
         self.theta = heading
-        self.theta_max = 45
         self.delta_theta = 0
 
         # Acceleration of vehicle
@@ -40,13 +39,14 @@ class Current:
         self.max_speed = 10.0
         self.min_speed = 1.0
 
-    # def update_front(self):
+        # Settings
+        self.max_theta = 45
+        self.turn_sens = turn_sensitivity
 
-
-    def calc_velocity(self, turn_sensitivity=5.0):
+    def calc_velocity(self):
         curvature_magnitude = abs(self.curvature)
         # print(curvature_magnitude)
-        speed_factor = np.exp(-turn_sensitivity * curvature_magnitude)
+        speed_factor = np.exp(-self.turn_sens * curvature_magnitude)
         
         target_speed = self.min_speed + (self.max_speed - self.min_speed) * speed_factor
 
@@ -64,6 +64,11 @@ class Current:
         # Separate into respective components
         dx = self.velocity * np.cos(self.theta) * dt
         dy = self.velocity * np.sin(self.theta) * dt
+
+        self.front = self.position + self.wheelbase * np.array([
+            np.cos(self.theta),
+            np.sin(self.theta)
+        ])
         
         # Update position
         self.position += np.array([dx, dy])
