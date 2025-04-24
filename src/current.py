@@ -43,6 +43,14 @@ class Current:
         self.max_theta = 45
         self.turn_sens = turn_sensitivity
 
+    def align_car(self, track):
+        # Aligns car to the track, useful for beginning simulations
+        self.position = np.array([track.xs[0], track.ys[0]])
+        
+        dy = track.ys[1] - track.ys[0]
+        dx = track.xs[1] - track.xs[0]
+        self.theta = np.arctan2(dy, dx)
+
     def calc_velocity(self):
         curvature_magnitude = abs(self.curvature)
         # print(curvature_magnitude)
