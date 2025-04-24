@@ -22,9 +22,9 @@ history.generate_track(xmin=0, xmax=50, points=100, function=track)
 car = Car(
     position=np.array([0.0, 0.0]), 
     lookAheadDistance=1.0, 
-    velocity=1.0, 
-    max_accel=2.0,
-    turn_sensitivity=2.0
+    velocity=0.0, 
+    max_accel=3.0,
+    turn_sensitivity=3.0
     )
 pure_pursuit = PurePursuit()
 
