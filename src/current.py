@@ -43,7 +43,7 @@ class Current:
     # def update_front(self):
 
 
-    def calc_velocity(self, turn_sensitivity=3.0):
+    def calc_velocity(self, turn_sensitivity=5.0):
         curvature_magnitude = abs(self.curvature)
         # print(curvature_magnitude)
         speed_factor = np.exp(-turn_sensitivity * curvature_magnitude)
@@ -67,7 +67,6 @@ class Current:
         
         # Update position
         self.position += np.array([dx, dy])
-        self.update_rear()
 
     def update(self, pure_pursuit, track):
         self.lookAheadPosition = pure_pursuit.calc_lookahead_pos(self, track)
