@@ -40,7 +40,7 @@ class Current:
         self.min_speed = 1.0
 
         # Settings
-        self.max_theta = 35
+        self.max_theta = 45
         self.turn_sens = turn_sensitivity
 
     def align_car(self, track):
