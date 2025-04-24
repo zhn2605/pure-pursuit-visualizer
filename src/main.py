@@ -24,7 +24,7 @@ car = Car(
     lookAheadDistance=1.0, 
     velocity=0.0, 
     max_accel=10.0,
-    turn_sensitivity=2.0
+    turn_sensitivity=3.0
     )
 pure_pursuit = PurePursuit()
 

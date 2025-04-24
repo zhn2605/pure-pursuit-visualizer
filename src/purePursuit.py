@@ -28,7 +28,7 @@ class PurePursuit:
         return np.hypot(desired[0] - initial[0], desired[1] - initial[1])
 
     def calc_angle(self, car, track):
-        direction = car.lookAheadPosition - car.position
+        direction = car.lookAheadPosition - car.front
         angle = np.arctan2(direction[1], direction[0])
 
         delta_theta = angle - car.theta

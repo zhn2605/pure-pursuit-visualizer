@@ -74,7 +74,7 @@ class History:
 
         # Time limit
         current_time = 0.0
-        dt = interval / 1000.0
+        dt = interval / 500.0
 
         def update(frame):
             nonlocal current_time
