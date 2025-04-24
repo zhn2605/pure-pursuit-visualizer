@@ -10,6 +10,7 @@ class Current:
     def __init__(self, position=np.array([0.0, 0.0]), lookAheadDistance=2.0, velocity=1.0, heading=45.0, max_accel=1.0):
         # Current position of vehicle
         self.position = position  # (x, y)
+        self.front = position # temporary
         self.wheelbase = 2.5
 
         # Look Ahead Distance
@@ -23,6 +24,7 @@ class Current:
         
         # Orientation of vehicle
         self.theta = heading
+        self.theta_max = 45
         self.delta_theta = 0
 
         # Acceleration of vehicle
@@ -38,17 +40,10 @@ class Current:
         self.max_speed = 10.0
         self.min_speed = 1.0
 
-        # Calculate rear
-        self.rear_pos = position
-        self.update_rear()
+    # def update_front(self):
 
-    def update_rear(self):
-        # Calculate rear axle
-        rear_x = self.position[0] - self.wheelbase * np.cos(self.theta)
-        rear_y = self.position[0] - self.wheelbase * np.sin(self.theta)
-        self.rear_pos = np.array([rear_x, rear_y])
 
-    def calc_velocity(self, turn_sensitivity=1.0):
+    def calc_velocity(self, turn_sensitivity=3.0):
         curvature_magnitude = abs(self.curvature)
         # print(curvature_magnitude)
         speed_factor = np.exp(-turn_sensitivity * curvature_magnitude)
