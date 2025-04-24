@@ -9,13 +9,13 @@ class PurePursuit:
         track_points = np.column_stack((track.xs, track.ys))
 
         # Find the index of the closest track point to the car
-        distances = np.linalg.norm(track_points - car.position, axis=1)
+        distances = np.linalg.norm(track_points - car.front, axis=1)
         closest_index = np.argmin(distances)  # Get index of closest point
 
         # Iterate only over future points (ensuring progression)
         for i in range(closest_index + 1, len(track.xs)):  # Start after closest point
             point = np.array([track.xs[i], track.ys[i]])
-            distance = np.linalg.norm(point - car.position)
+            distance = np.linalg.norm(point - car.front)
 
             if distance >= car.lookAheadDistance and distance < min_dist:
                 min_dist = distance
@@ -48,8 +48,14 @@ class PurePursuit:
         L = np.sqrt(local_x**2 + local_y**2)
 
         if abs(local_y) < 1e-6:
-            return 0
-        return 2 * local_y / (L**2)
+            curvature = 0
+        else:
+            curvature = 2 * local_y / (L**2)
+
+        curv_max = np.tan(car.max_theta) / car.wheelbase
+        curvature = np.clip(curvature, -curv_max, curv_max)
+
+        return curvature
 
     # def calc_curvature(self, car, track):
     #     # Calculate radius of curvature
