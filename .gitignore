@@ -1,5 +1,7 @@
 # venv
 venv/
+.venv/
+uv.lock
 
 # py
 **/__pycache__/
@@ -7,3 +9,7 @@ pytest_cache/
 
 # vscode
 .vscode
+
+# competition runtime data (live scoreboard + append-only run log)
+data/scoreboard.json
+data/runs.jsonl

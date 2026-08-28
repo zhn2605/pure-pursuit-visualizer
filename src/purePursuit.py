@@ -2,26 +2,28 @@ import numpy as np
 
 class PurePursuit:
     def calc_lookahead_pos(self, car, track):
-        min_dist = float('inf')
-        lookAheadPoint = None
-
-        # Convert track points into a NumPy array
-        track_points = np.column_stack((track.xs, track.ys))
+        # Vectorised over the track: the simulation runs thousands of steps per
+        # submission, and a Python loop per step dominated the runtime.
+        track_points = track.points
 
         # Find the index of the closest track point to the car
         distances = np.linalg.norm(track_points - car.front, axis=1)
-        closest_index = np.argmin(distances)  # Get index of closest point
+        closest_index = int(np.argmin(distances))
 
-        # Iterate only over future points (ensuring progression)
-        for i in range(closest_index + 1, len(track.xs)):  # Start after closest point
-            point = np.array([track.xs[i], track.ys[i]])
-            distance = np.linalg.norm(point - car.front)
+        # Consider only future points (ensuring progression), and among those
+        # take the nearest one at least lookAheadDistance away.
+        forward = distances[closest_index + 1:]
+        if forward.size == 0:
+            return car.lookAheadPosition
 
-            if distance >= car.lookAheadDistance and distance < min_dist:
-                min_dist = distance
-                lookAheadPoint = point
+        eligible = np.flatnonzero(forward >= car.lookAheadDistance)
+        if eligible.size == 0:
+            # Past the last point far enough out: aim at the end of the track
+            # so the car still drives through the finish.
+            return track_points[-1].copy()
 
-        return lookAheadPoint if lookAheadPoint is not None else car.lookAheadPosition
+        best = eligible[np.argmin(forward[eligible])]
+        return track_points[closest_index + 1 + best].copy()
 
     def calc_distance(self, initial, desired):
         # pythagorean theroem
@@ -35,7 +37,7 @@ class PurePursuit:
         delta_theta = np.arctan2(np.sin(delta_theta), np.cos(delta_theta))
 
         return delta_theta
-    
+
     def calc_curvature(self, car, track):
         # Vector from car to lookahead
         dx = car.lookAheadPosition[0] - car.position[0]
@@ -47,22 +49,12 @@ class PurePursuit:
 
         L = np.sqrt(local_x**2 + local_y**2)
 
-        if abs(local_y) < 1e-6:
-            curvature = 0
+        if abs(local_y) < 1e-6 or L < 1e-9:
+            curvature = 0.0
         else:
             curvature = 2 * local_y / (L**2)
 
-        curv_max = np.tan(car.max_theta) / car.wheelbase
+        curv_max = np.tan(car.max_steer) / car.wheelbase
         curvature = np.clip(curvature, -curv_max, curv_max)
 
         return curvature
-
-    # def calc_curvature(self, car, track):
-    #     # Calculate radius of curvature
-    #     L = car.lookAheadDistance
-    #     desired_x = car.lookAheadPosition[0]
-
-    #     r = (L**2)/(2 * abs(desired_x))
-    #     curvature = 1/r
-
-    #     return curvature

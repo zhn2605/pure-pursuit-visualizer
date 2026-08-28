@@ -4,117 +4,139 @@ matplotlib.use('TkAgg')
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from matplotlib.animation import FuncAnimation
+from matplotlib.patches import Polygon
 
-class Track:
-    def __init__(self):
-        self.xs = []  # x coordinates
-        self.ys = []  # y coordinates
-        self.color = 'k'
+from track import Track  # Track now lives in track.py alongside the spline code
 
-    def add_point(self, point):
-        self.xs.append(point[0])
-        self.ys.append(point[1])
-    
-    def show_track(self):
-        plt.plot(self.points[:, 0], self.points[:, 1], color='k', marker='o', linestyle='-')
-        plt.show()
-
-    # Will work on this later
-# def spline_track(self):
-# if len(self.points) < 3
-# print("Not enough points for spline")
-# return
-#
-# x, y = self.points[:, 0], self.points[:, 1]
-# cubic_spline = CubicSpline(x, y)
-#
 
 class History:
-    def __init__(self, debug=True):
+    def __init__(self, debug=True, course=None):
         self.track = Track()
+        self.course = course
         self.position = []
         self.theta = []
         self.velocity = []
         self.time = []
 
         self.debug = debug
-    
-    def display_track(self):
-        self.track.show_track()
-    
-    def generate_track(self, xmin=0, xmax=10, points=100, function=lambda x: -((x - 5)**2) + 25):
-        for x in np.linspace(xmin, xmax, points):
-            point = np.array([x, function(x)])
-            self.track.add_point(point)
-    
+
+    def generate_track(self, xmin=0, xmax=10, points=100,
+                       function=lambda x: -((x - 5)**2) + 25, spline=False):
+        """Build the track from a Python callable, optionally spline-smoothed."""
+        xs = np.linspace(xmin, xmax, points)
+        track = Track([(x, function(x)) for x in xs])
+        self.track = track.spline(samples=points * 4) if spline else track
+        return self.track
+
+    def generate_track_from_equation(self, equation, xmin=0, xmax=60, points=160, spline=True):
+        """Build the track from a text equation, same parser the web UI uses."""
+        track = Track.from_equation(equation, xmin=xmin, xmax=xmax, points=points)
+        self.track = track.spline(samples=points * 3) if spline else track
+        return self.track
+
     def append(self, time, curr):
         self.position.append(curr.position.copy())
         self.theta.append(curr.theta)
         self.velocity.append(curr.velocity)
         self.time.append(time)
-    
-    def animate(self, car, pure_pursuit, interval=50, max_time=20.0):        
+
+    def _draw_course(self, ax):
+        if self.course is None:
+            return
+        # Outlined in red, unfilled, drawn from the rotated corners so the
+        # desktop view matches the browser view exactly.
+        for obstacle in self.course.obstacles:
+            ax.add_patch(Polygon(
+                obstacle.corners(), closed=True,
+                fill=False, edgecolor='r', linewidth=1.4, zorder=1,
+            ))
+        # Ceiling and floor are solid: draw them like the obstacles.
+        ax.axhline(self.course.ymax, color='r', linewidth=2)
+        ax.axhline(self.course.ymin, color='r', linewidth=2)
+        ax.axvline(self.course.finish_x, color='k', linestyle='--',
+                   linewidth=1.2, label='Finish')
+        ax.set_aspect('equal', adjustable='box')
+
+    def animate(self, car, pure_pursuit, interval=50, max_time=20.0):
         fig, ax = plt.subplots()
-        ax.set_xlim(min(self.track.xs) - 2, max(self.track.xs) + 2)  # Set x-axis limits
-        ax.set_ylim(min(self.track.ys) - 5, max(self.track.ys) + 5)  # Set y-axis limits
-        ax.plot(self.track.xs, self.track.ys, marker='o', markersize=2, color=self.track.color, label="Track")  # Draw the static track
-    
+
+        if self.course is not None:
+            ax.set_xlim(self.course.xmin - 1, self.course.xmax + 1)
+            ax.set_ylim(self.course.ymin - 1, self.course.ymax + 1)
+        else:
+            ax.set_xlim(min(self.track.xs) - 2, max(self.track.xs) + 2)
+            ax.set_ylim(min(self.track.ys) - 5, max(self.track.ys) + 5)
+
+        self._draw_course(ax)
+        ax.plot(self.track.xs, self.track.ys, marker='o', markersize=2,
+                color=self.track.color, label="Track")
+
         # Store trajectory points
         trajectory_xs = []
         trajectory_ys = []
-        trajectory_line, = ax.plot([], [], 'b-', label="Trajectory")  # Trajectory line
-    
+        trajectory_line, = ax.plot([], [], 'b-', label="Trajectory")
+
         car_rear, = ax.plot([], [], 'bo', markersize=8)
         car_front, = ax.plot([], [], 'bo', markersize=8)
-        car_frame, = ax.plot([], [], 'k-', linewidth=2.25, label="Car")
+        car_frame, = ax.plot([], [], 'k-', linewidth=2.25)
+        car_body, = ax.plot([], [], 'b-', linewidth=1.4, label="Car")
         lookAheadDot, = ax.plot([], [], 'kx', markersize=10, label="Lookahead Point")
         lookahead_line, = ax.plot([], [], 'r--', linewidth=1.5, label="Lookahead")
-        final_pos = np.array([self.track.xs[-1], self.track.ys[-1]])
+        final_pos = self.track.end
 
-        # Time limit
+        # The animation steps the car by car.dt, so the clock must agree with
+        # the physics rather than with the wall-clock frame interval.
         current_time = 0.0
-        dt = interval / 500.0
+
+        def stop(reason):
+            print(reason)
+            ani.event_source.stop()
 
         def update(frame):
             nonlocal current_time
 
-            # Update angle and position
-            delta_theta = pure_pursuit.calc_angle(car, self.track)
             car.update(pure_pursuit, self.track)
-            car.lookAheadPosition = pure_pursuit.calc_lookahead_pos(car, self.track)
+            self.append(current_time, car)
 
-            # Update and store trajectory
             trajectory_xs.append(car.position[0])
             trajectory_ys.append(car.position[1])
 
-            # Update plot data
             car_rear.set_data([car.position[0]], [car.position[1]])
             car_front.set_data([car.front[0]], [car.front[1]])
-            car_frame.set_data([car.position[0], car.front[0]], [car.position[1], car.front[1]])
+            car_frame.set_data([car.position[0], car.front[0]],
+                               [car.position[1], car.front[1]])
+            # Closed footprint outline: exactly the shape collision uses.
+            body = np.vstack([car.body_corners(), car.body_corners()[:1]])
+            car_body.set_data(body[:, 0], body[:, 1])
             lookAheadDot.set_data([car.lookAheadPosition[0]], [car.lookAheadPosition[1]])
-            lookahead_line.set_data([car.front[0], car.lookAheadPosition[0]], 
-                                [car.front[1], car.lookAheadPosition[1]])
-            trajectory_line.set_data(trajectory_xs, trajectory_ys)  # Update trajectory line
-            
-            # Debug flag
-            if self.debug:
-                print(f"Time: {current_time:.2f}s, Car Position: {car.position}, Lookahead Position: {car.lookAheadPosition}")
+            lookahead_line.set_data([car.front[0], car.lookAheadPosition[0]],
+                                    [car.front[1], car.lookAheadPosition[1]])
+            trajectory_line.set_data(trajectory_xs, trajectory_ys)
 
-            if np.linalg.norm(car.position - final_pos) < 0.5:
-                print("Car reached final point.")
-                ani.event_source.stop()
+            if self.debug:
+                print(f"Time: {current_time:.2f}s, Car Position: {car.position}, "
+                      f"Lookahead Position: {car.lookAheadPosition}")
+
+            if self.course is not None:
+                hit = self.course.collision(car.position, car.front, car.width)
+                if hit is not None:
+                    stop(f"GAME OVER - hit {hit.name} at t={current_time:.2f}s")
+                elif car.front[0] >= self.course.finish_x:
+                    stop(f"FINISHED in {current_time:.2f}s")
+            elif np.linalg.norm(car.position - final_pos) < 0.5:
+                stop("Car reached final point.")
 
             if current_time > max_time:
-                print("Time limit reached.")
-                ani.event_source.stop()
-            
-            current_time += dt
+                stop("Time limit reached.")
 
-            return car_rear, car_front, car_frame, lookAheadDot, trajectory_line, lookahead_line
+            current_time += car.dt
 
-        ani = animation.FuncAnimation(fig, update, frames=100, interval=interval, blit=True)
+            return (car_rear, car_front, car_frame, car_body, lookAheadDot,
+                    trajectory_line, lookahead_line)
 
-        plt.legend()
+        ani = animation.FuncAnimation(fig, update, frames=None, interval=interval,
+                                      blit=True, cache_frame_data=False)
+
+        plt.legend(loc='upper right', fontsize=8)
         plt.grid(True)
         plt.show()

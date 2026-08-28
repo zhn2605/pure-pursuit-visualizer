@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pure Pursuit Challenge</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<h1>Pure Pursuit Challenge</h1>
+<p class="tagline">Enter a path equation, tune the controller, reach the finish line without hitting an obstacle.</p>
+<p class="stats" id="stats"></p>
+<hr>
+
+<div class="layout">
+
+  <div class="controls">
+    <h2>Your run</h2>
+
+    <label class="field">
+      <span class="label">Name</span>
+      <input id="name" type="text" maxlength="24" autocomplete="off">
+    </label>
+
+    <label class="field">
+      <span class="label">Path equation: y =</span>
+      <input id="equation" type="text" spellcheck="false" autocomplete="off">
+    </label>
+    <p class="hint" id="eqHint"></p>
+
+    <p class="label">Examples (click to try, hover to see the equation)</p>
+    <div class="presets" id="presets"></div>
+
+    <h2>Controller</h2>
+    <div id="sliders" class="sliders"></div>
+
+    <div class="actions">
+      <button id="run" class="primary">Run</button>
+      <button id="replay" class="ghost" disabled>Replay</button>
+    </div>
+
+    <div id="banner" class="banner" hidden></div>
+  </div>
+
+  <div class="stage">
+    <canvas id="arena"></canvas>
+    <p class="hud">
+      <span>t = <b id="hudTime">0.00</b> s</span>
+      <span>v = <b id="hudSpeed">0.00</b> u/s</span>
+      <span>course: <b id="hudCourse">&mdash;</b></span>
+    </p>
+  </div>
+
+  <div class="board">
+    <h2>Leaderboard</h2>
+    <div class="board-head" id="boardHead" hidden>
+      <span>#</span><span>name</span><span>done</span><span>time</span>
+    </div>
+    <ol id="board" class="board-list"></ol>
+    <p class="empty" id="boardEmpty">No runs yet.</p>
+  </div>
+
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
